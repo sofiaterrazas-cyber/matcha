@@ -1,160 +1,80 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../constants/colors';
 import { fonts } from '../constants/fonts';
 import { products } from '../constants/products';
+import { loadOrders, saveOrders } from '../storage/orders';
 
-export default function Order() {
-  const { id } = useLocalSearchParams();
-  const product = products.find((item) => item.id === id);
+export default function OrderScreen() {
+  const { productId } = useLocalSearchParams<{ productId: string }>();
+  const product = products.find((p) => p.id === productId) || products[0];
 
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [note, setNote] = useState('');
+  const [error, setError] = useState('');
 
-  const [nameError, setNameError] = useState('');
-  const [phoneError, setPhoneError] = useState('');
-
-  if (!product) {
-    return <Text>Producto no encontrado</Text>;
-  }
-
-  const handlePhoneChange = (text: string) => {
-    setPhone(text);
-    if (text.length > 0 && text.length < 8) {
-      setPhoneError(`Faltan ${8 - text.length} números`);
-    } else {
-      setPhoneError('');
-    }
-  };
-
-  const isFormValid = name.trim().length >= 3 && phone.length === 8;
-
-  const handleSubmit = () => {
-    let isValid = true;
-
-    if (name.trim().length < 3) {
-      setNameError('Escribe al menos 3 letras');
-      isValid = false;
-    } else {
-      setNameError('');
+  const handleSubmit = async () => {
+    if (!name.trim()) {
+      setError('Por favor escribe tu nombre');
+      return;
     }
 
-    if (phone.length !== 8) {
-      setPhoneError('El celular debe tener 8 números');
-      isValid = false;
-    } else {
-      setPhoneError('');
-    }
+    setError('');
+    const orders = await loadOrders();
+    const newOrder = {
+      id: Date.now().toString(),
+      product: product.name,
+      price: product.price,
+      name: name.trim(),
+      date: new Date().toLocaleDateString('es-BO'),
+    };
 
-    if (isValid) {
-      router.push({
-        pathname: '/order-confirmed',
-        params: { name: name.trim(), product: product.name },
-      });
-    }
+    await saveOrders([newOrder, ...orders]);
+    router.push('/order-confirmed');
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
-      <View style={styles.summary}>
-        <Image source={product.image} style={styles.summaryImage} />
-        <View>
-          <Text style={styles.summaryName}>{product.name}</Text>
-          <Text style={styles.summaryPrice}>Bs {product.price}</Text>
-        </View>
+    <SafeAreaView style={styles.screen}>
+      <Text style={styles.title}>¿A nombre de quién hacemos el pedido?</Text>
+
+      <View style={styles.form}>
+        <TextInput
+          style={styles.input}
+          placeholder="Tu nombre"
+          placeholderTextColor={colors.textMuted}
+          value={name}
+          onChangeText={setName}
+        />
+        {error ? <Text style={styles.error}>{error}</Text> : null}
       </View>
 
-      <Text style={styles.label}>Tu nombre</Text>
-      <TextInput
-        style={[styles.input, nameError ? styles.inputError : null]}
-        value={name}
-        onChangeText={setName}
-        placeholder="Ej. Ana"
-      />
-      {nameError ? <Text style={styles.error}>{nameError}</Text> : null}
-
-      <Text style={styles.label}>Celular</Text>
-      <TextInput
-        style={[styles.input, phoneError ? styles.inputError : null]}
-        value={phone}
-        onChangeText={handlePhoneChange}
-        placeholder="Ej. 71234567"
-        keyboardType="number-pad"
-        maxLength={8}
-      />
-      {phoneError ? <Text style={styles.error}>{phoneError}</Text> : null}
-
-      <Text style={styles.label}>Nota para el pedido (opcional)</Text>
-      <TextInput
-        style={styles.input}
-        value={note}
-        onChangeText={setNote}
-        placeholder="Ej. menos hielo"
-      />
-
-      <Pressable
-        style={[styles.button, !isFormValid && styles.buttonDisabled]}
-        onPress={handleSubmit}
-        disabled={!isFormValid}
-      >
+      <Pressable style={styles.button} onPress={handleSubmit}>
         <Text style={styles.buttonText}>Confirmar pedido</Text>
       </Pressable>
-    </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 24, gap: 8 },
-  summary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    padding: 14,
-    marginBottom: 16,
-    borderRadius: 28,
-    backgroundColor: colors.card,
-    shadowColor: colors.text,
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 2,
-  },
-  summaryImage: {
-    width: 72,
-    height: 72,
-    borderRadius: 20,
-    resizeMode: 'contain',
-    backgroundColor: colors.primarySoft,
-  },
-  summaryName: { fontSize: 18, fontFamily: fonts.h2, color: colors.text },
-  summaryPrice: { fontSize: 20, fontFamily: fonts.h2, color: colors.primary },
-  label: { fontSize: 13, fontFamily: fonts.h2, color: colors.textMuted, marginTop: 12, marginLeft: 4 },
+  screen: { flex: 1, padding: 24, backgroundColor: colors.background, justifyContent: 'space-between' },
+  title: { fontSize: 22, fontFamily: fonts.h1, color: colors.text, marginTop: 20 },
+  form: { gap: 8 },
   input: {
-    paddingVertical: 16,
-    paddingHorizontal: 18,
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 16,
     fontSize: 16,
     fontFamily: fonts.p,
-    borderWidth: 1.5,
-    borderRadius: 18,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
+    color: colors.text,
   },
-  inputError: { borderColor: colors.error },
-  error: { fontSize: 13, fontFamily: fonts.p, color: colors.error, marginLeft: 4 },
+  error: { color: colors.error, fontSize: 14, fontFamily: fonts.p, marginLeft: 4 },
   button: {
-    marginTop: 32,
-    paddingVertical: 18,
-    borderRadius: 30,
-    alignItems: 'center',
     backgroundColor: colors.primary,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
+    borderRadius: 100,
+    paddingVertical: 18,
+    alignItems: 'center',
+    marginBottom: 20,
   },
-  buttonDisabled: { opacity: 0.4, elevation: 0, shadowOpacity: 0 },
-  buttonText: { fontSize: 17, fontFamily: fonts.h2, letterSpacing: 0.3, color: colors.onPrimary },
+  buttonText: { color: colors.card, fontSize: 16, fontFamily: fonts.h2 },
 });
