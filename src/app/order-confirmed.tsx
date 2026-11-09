@@ -1,52 +1,46 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import NotifyCard from '../components/NotifyCard';
 import { colors } from '../constants/colors';
 import { fonts } from '../constants/fonts';
 
-export default function OrderConfirmed() {
-  const { name, product } = useLocalSearchParams();
-
+export default function OrderConfirmedScreen() {
   return (
-    <View style={styles.screen}>
-      <Ionicons name="checkmark-circle" size={110} color={colors.primary} />
-      <Text style={styles.title}>¡Pedido listo, {name}!</Text>
-      <Text style={styles.subtitle}>Tu {product} ya se está preparando.</Text>
-      <Pressable style={styles.button} onPress={() => router.dismissAll()}>
+    <SafeAreaView style={styles.screen}>
+      <View style={styles.content}>
+        <View style={styles.iconContainer}>
+          <Ionicons name="checkmark-circle-outline" size={80} color={colors.primary} />
+        </View>
+        <Text style={styles.title}>¡Pedido recibido!</Text>
+        <Text style={styles.subtitle}>En breve comenzamos a prepararlo.</Text>
+
+        <View style={styles.cardContainer}>
+          <NotifyCard />
+        </View>
+      </View>
+
+      <Pressable style={styles.button} onPress={() => router.replace('/(tabs)')}>
         <Text style={styles.buttonText}>Volver al menú</Text>
       </Pressable>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    padding: 24,
-    gap: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-  },
-  title: {
-    fontSize: 28,
-    fontFamily: fonts.h1,
-    letterSpacing: -0.5,
-    color: colors.text,
-    textAlign: 'center',
-  },
-  subtitle: { fontSize: 16, fontFamily: fonts.p, lineHeight: 24, color: colors.textMuted, textAlign: 'center' },
+  screen: { flex: 1, padding: 24, backgroundColor: colors.background, justifyContent: 'space-between' },
+  content: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  iconContainer: { marginBottom: 8 },
+  title: { fontSize: 24, fontFamily: fonts.h1, color: colors.text, textAlign: 'center' },
+  subtitle: { fontSize: 16, fontFamily: fonts.p, color: colors.textMuted, textAlign: 'center', marginBottom: 20 },
+  cardContainer: { width: '100%' },
   button: {
-    marginTop: 32,
-    paddingVertical: 18,
-    paddingHorizontal: 48,
-    borderRadius: 30,
     backgroundColor: colors.primary,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
+    borderRadius: 100,
+    paddingVertical: 18,
+    alignItems: 'center',
+    marginBottom: 20,
   },
-  buttonText: { fontSize: 17, fontFamily: fonts.h2, letterSpacing: 0.3, color: colors.onPrimary },
+  buttonText: { color: colors.card, fontSize: 16, fontFamily: fonts.h2 },
 });
