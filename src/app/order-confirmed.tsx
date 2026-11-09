@@ -1,18 +1,33 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
+import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import NotifyCard from '../components/NotifyCard';
 import { colors } from '../constants/colors';
 import { fonts } from '../constants/fonts';
 
 export default function OrderConfirmedScreen() {
+  const scale = useSharedValue(0);
+
+  const checkStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  useEffect(() => {
+    scale.value = withSpring(1);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }, []);
+
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.content}>
-        <View style={styles.iconContainer}>
+        <Animated.View style={[styles.iconContainer, checkStyle]}>
           <Ionicons name="checkmark-circle-outline" size={80} color={colors.primary} />
-        </View>
+        </Animated.View>
+
         <Text style={styles.title}>¡Pedido recibido!</Text>
         <Text style={styles.subtitle}>En breve comenzamos a prepararlo.</Text>
 
